@@ -62,6 +62,14 @@
         "algorithm": "cpp",
         "chrono": "cpp",
         "functional": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "__hash_table": "cpp",
+        "array": "cpp",
+        "compare": "cpp",
+        "complex": "cpp",
+        "concepts": "cpp",
+        "deque": "cpp",
+        "stack": "cpp",
+        "unordered_map": "cpp"
     }
 }

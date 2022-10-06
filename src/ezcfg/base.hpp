@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <vector>
 
 namespace ezcfg
 {

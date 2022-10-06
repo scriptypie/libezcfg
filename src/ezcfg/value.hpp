@@ -20,12 +20,15 @@ struct value_t
     string _v;
     enum type_t
     {
-        undefined, str, intnum, floatnum, boolean
+        undefined, str, intnum, floatnum, boolean, intvector, floatvector
     };
     type_t type;
     
     template<class T>
     T as() const { return T(-1); }
+
+    template<class T>
+    std::vector<T> as_ptr() const { return std::vector<T>(-1); }
 
     value_t(const char* s, const uint32_t& t) : _v(s), type((type_t)t) {}
     value_t(const char* s) : _v(s)
@@ -38,6 +41,39 @@ struct value_t
     value_t(const int& s) : _v(std::to_string(s)), type(intnum) {}
     value_t(const double& s) : _v(std::to_string(s)), type(floatnum) {}
     value_t(const bool& s) : _v(std::to_string(s)), type(boolean) {}
+    value_t(const std::vector<int>& iv) : type(intvector)
+    {
+        _v += "(";
+        for (size_t i = 0; i < iv.size(); i++)
+        {
+            _v += std::to_string(iv[i]);
+            if (i + 1 < iv.size())
+                _v += ",";
+        }
+        _v += ")";
+    }
+    value_t(const std::vector<float>& iv) : type(intvector)
+    {
+        _v += "(";
+        for (size_t i = 0; i < iv.size(); i++)
+        {
+            _v += std::to_string(iv[i]);
+            if (i + 1 < iv.size())
+                _v += ",";
+        }
+        _v += ")";
+    }
+    value_t(const std::vector<double>& iv) : type(floatvector)
+    {
+        _v += "(";
+        for (size_t i = 0; i < iv.size(); i++)
+        {
+            _v += std::to_string(iv[i]);
+            if (i + 1 < iv.size())
+                _v += ",";
+        }
+        _v += ")";
+    }
 
     bool operator==(const value_t& b) const;
 
@@ -72,6 +108,84 @@ template<>
 int value_t::as<int>() const
 {
     return (type == intnum) ? atoi(_v.c_str()) : 0;
+}
+
+template<>
+std::vector<float> value_t::as_ptr<float>() const
+{
+    std::vector<float> tmp;
+    std::string t;
+
+    for (size_t i = 0; i < _v.size(); i++)
+    {
+        if (_v[i] == '(')
+        {
+            i += 1;
+            while (i < _v.size())
+            {
+                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                {
+                    t += _v[i];
+                }
+                tmp.push_back(atof(t.c_str()));
+                t = "";
+                i += 1;
+            }
+        }
+    }
+    return tmp;
+}
+
+template<>
+std::vector<double> value_t::as_ptr<double>() const
+{
+    std::vector<double> tmp;
+    std::string t;
+
+    for (size_t i = 0; i < _v.size(); i++)
+    {
+        if (_v[i] == '(')
+        {
+            i += 1;
+            while (i < _v.size())
+            {
+                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                {
+                    t += _v[i];
+                }
+                tmp.push_back(atof(t.c_str()));
+                t = "";
+                i += 1;
+            }
+        }
+    }
+    return tmp;
+}
+
+template<>
+std::vector<int> value_t::as_ptr<int>() const 
+{
+    std::vector<int> tmp;
+    std::string t;
+
+    for (size_t i = 0; i < _v.size(); i++)
+    {
+        if (_v[i] == '(')
+        {
+            i += 1;
+            while (i < _v.size())
+            {
+                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                {
+                    t += _v[i];
+                }
+                tmp.push_back(atoi(t.c_str()));
+                t = "";
+                i += 1;
+            }
+        }
+    }
+    return tmp;
 }
 
 template<>

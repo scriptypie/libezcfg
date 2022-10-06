@@ -11,8 +11,5 @@ int main()
     config.save("window");
     config.load("window");
 
-    const int32_t testval = config.get("window_width").as<int32_t>();
-
-    std::cout << "Done! " << testval << std::endl;
     return 0;
 }
