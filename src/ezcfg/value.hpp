@@ -15,124 +15,124 @@
 namespace ezcfg
 {
 
-struct value_t
+struct ConfigValue
 {
-    string _v;
-    union data_t
+    string m_string;
+    union ConfigValueStoredData
     {
         int64_t int64;
         double  float64;
         bool    boolean;
     };
-    data_t data;
-    enum type_t
+    ConfigValueStoredData m_data;
+    enum ConfigValueDataType
     {
-        undefined, str, intnum, floatnum, boolean, intvector, floatvector
+        UNDEFINED, STRINGVAR, INTNUM, FLOATNUM, BOOLEAN, INTVECTOR, FLOATVECTOR
     };
-    type_t type;
+    ConfigValueDataType m_type;
     
     template<class T>
-    T as() const { return T(-1); }
+    T As() const { return T(-1); }
 
     template<class T>
-    std::vector<T> as_ptr() const { return std::vector<T>(-1); }
+    std::vector<T> AsPtr() const { return std::vector<T>(-1); }
 
-    value_t(const char* s, const uint32_t& t) : _v(s), type((type_t)t) {}
-    value_t(const char* s) : _v(s)
+    ConfigValue(const char* s, const uint32_t& t) : m_string(s), m_type((ConfigValueDataType)t) {}
+    ConfigValue(const char* s) : m_string(s)
     {
-        if (isdigit(_v)) { type = intnum; data.int64 = atoll(_v.c_str()); return; }
-        if (isfloat(_v)) { type = floatnum; data.float64 = atof(_v.c_str()); return; }
-        if (_v == "true" || _v == "false") { type = boolean; data.boolean = _v == "true" ? true : false; return; }
-        type = str;
+        if (IsDigit(m_string)) { m_type = INTNUM; m_data.int64 = atoll(m_string.c_str()); return; }
+        if (IsFloat(m_string)) { m_type = FLOATNUM; m_data.float64 = atof(m_string.c_str()); return; }
+        if (m_string == "true" || m_string == "false") { m_type = BOOLEAN; m_data.boolean = m_string == "true" ? true : false; return; }
+        m_type = STRINGVAR;
     }
-    value_t(const int& s) : type(intnum) { data.int64 = s; }
-    value_t(const double& s) : type(floatnum) { data.float64 = s; }
-    value_t(const float& s) : type(floatnum) { data.float64 = s; }
-    value_t(const bool& s) : type(boolean) { data.boolean = s; }
-    value_t(const std::vector<int>& iv) : type(intvector)
+    ConfigValue(const int& s) : m_type(INTNUM) { m_data.int64 = s; }
+    ConfigValue(const double& s) : m_type(FLOATNUM) { m_data.float64 = s; }
+    ConfigValue(const float& s) : m_type(FLOATNUM) { m_data.float64 = s; }
+    ConfigValue(const bool& s) : m_type(BOOLEAN) { m_data.boolean = s; }
+    ConfigValue(const std::vector<int>& iv) : m_type(INTVECTOR)
     {
-        _v = "(";
+        m_string = "(";
         for (size_t i = 0; i < iv.size(); i++)
         {
-            _v += std::to_string(iv[i]);
+            m_string += std::to_string(iv[i]);
             if (i + 1 < iv.size())
-                _v += ",";
+                m_string += ",";
         }
-        _v += ")";
+        m_string += ")";
     }
-    value_t(const std::vector<float>& iv) : type(intvector)
+    ConfigValue(const std::vector<float>& iv) : m_type(INTVECTOR)
     {
-        _v += "(";
+        m_string += "(";
         for (size_t i = 0; i < iv.size(); i++)
         {
-            _v += std::to_string(iv[i]);
+            m_string += std::to_string(iv[i]);
             if (i + 1 < iv.size())
-                _v += ",";
+                m_string += ",";
         }
-        _v += ")";
+        m_string += ")";
     }
-    value_t(const std::vector<double>& iv) : type(floatvector)
+    ConfigValue(const std::vector<double>& iv) : m_type(FLOATVECTOR)
     {
-        _v += "(";
+        m_string += "(";
         for (size_t i = 0; i < iv.size(); i++)
         {
-            _v += std::to_string(iv[i]);
+            m_string += std::to_string(iv[i]);
             if (i + 1 < iv.size())
-                _v += ",";
+                m_string += ",";
         }
-        _v += ")";
+        m_string += ")";
     }
 
-    bool operator==(const value_t& b) const;
+    bool operator!=(const ConfigValue& b) const;
 
 };  
 
-std::ostream& operator<<(std::ostream& os, const value_t& v)
+std::ostream& operator<<(std::ostream& os, const ConfigValue& v)
 {
-    return os << v._v;
+    return os << v.m_string;
 }
 
-static value_t nullvalue = value_t("null", value_t::undefined);
+static ConfigValue nullvalue = ConfigValue("null", ConfigValue::UNDEFINED);
 
-bool value_t::operator==(const value_t& b) const
+bool ConfigValue::operator!=(const ConfigValue& b) const
 {
-    return _v == b._v;
-}
-
-template<>
-const char* value_t::as<const char*>() const
-{
-    return (type == str) ? _v.c_str() : "<NaS>";
+    return !(m_string == b.m_string);
 }
 
 template<>
-std::string value_t::as<std::string>() const
+const char* ConfigValue::As<const char*>() const
 {
-    return (type == str) ? _v : "<NaS>";
+    return (m_type == STRINGVAR) ? m_string.c_str() : "<NaS>";
 }
 
 template<>
-int value_t::as<int>() const
+std::string ConfigValue::As<std::string>() const
 {
-    return (type == intnum) ? data.int64 : 0;
+    return (m_type == STRINGVAR) ? m_string : "<NaS>";
 }
 
 template<>
-std::vector<float> value_t::as_ptr<float>() const
+int ConfigValue::As<int>() const
+{
+    return (m_type == INTNUM) ? m_data.int64 : 0;
+}
+
+template<>
+std::vector<float> ConfigValue::AsPtr<float>() const
 {
     std::vector<float> tmp;
     std::string t;
 
-    for (size_t i = 0; i < _v.size(); i++)
+    for (size_t i = 0; i < m_string.size(); i++)
     {
-        if (_v[i] == '(')
+        if (m_string[i] == '(')
         {
             i += 1;
-            while (i < _v.size())
+            while (i < m_string.size())
             {
-                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                for (; i < m_string.size() && m_string[i] != 41 && m_string[i] != 44; i++)
                 {
-                    t += _v[i];
+                    t += m_string[i];
                 }
                 tmp.push_back(atof(t.c_str()));
                 t = "";
@@ -144,21 +144,21 @@ std::vector<float> value_t::as_ptr<float>() const
 }
 
 template<>
-std::vector<double> value_t::as_ptr<double>() const
+std::vector<double> ConfigValue::AsPtr<double>() const
 {
     std::vector<double> tmp;
     std::string t;
 
-    for (size_t i = 0; i < _v.size(); i++)
+    for (size_t i = 0; i < m_string.size(); i++)
     {
-        if (_v[i] == '(')
+        if (m_string[i] == '(')
         {
             i += 1;
-            while (i < _v.size())
+            while (i < m_string.size())
             {
-                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                for (; i < m_string.size() && m_string[i] != 41 && m_string[i] != 44; i++)
                 {
-                    t += _v[i];
+                    t += m_string[i];
                 }
                 tmp.push_back(atof(t.c_str()));
                 t = "";
@@ -170,21 +170,21 @@ std::vector<double> value_t::as_ptr<double>() const
 }
 
 template<>
-std::vector<int> value_t::as_ptr<int>() const 
+std::vector<int> ConfigValue::AsPtr<int>() const 
 {
     std::vector<int> tmp;
     std::string t;
 
-    for (size_t i = 0; i < _v.size(); i++)
+    for (size_t i = 0; i < m_string.size(); i++)
     {
-        if (_v[i] == '(')
+        if (m_string[i] == '(')
         {
             i += 1;
-            while (i < _v.size())
+            while (i < m_string.size())
             {
-                for (; i < _v.size() && _v[i] != 41 && _v[i] != 44; i++)
+                for (; i < m_string.size() && m_string[i] != 41 && m_string[i] != 44; i++)
                 {
-                    t += _v[i];
+                    t += m_string[i];
                 }
                 tmp.push_back(atoi(t.c_str()));
                 t = "";
@@ -196,21 +196,21 @@ std::vector<int> value_t::as_ptr<int>() const
 }
 
 template<>
-float value_t::as<float>() const
+float ConfigValue::As<float>() const
 {
-    return (type == floatnum) ? data.float64 : 0;
+    return (m_type == FLOATNUM) ? m_data.float64 : 0;
 }
 
 template<>
-double value_t::as<double>() const
+double ConfigValue::As<double>() const
 {
-    return (type == floatnum) ? data.float64 : 0;
+    return (m_type == FLOATNUM) ? m_data.float64 : 0;
 }
 
 template<>
-bool value_t::as<bool>() const
+bool ConfigValue::As<bool>() const
 {
-    return (type == boolean) ? data.boolean : 0;
+    return (m_type == BOOLEAN) ? m_data.boolean : 0;
 }
 
 }

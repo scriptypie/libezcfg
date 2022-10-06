@@ -18,7 +18,7 @@ namespace ezcfg
 {
 
 typedef std::string string;
-typedef string name_t;
+typedef string VariableName;
 
 }
 

@@ -14,7 +14,7 @@
 namespace ezcfg
 {
 
-bool isfloat(const string& s)
+bool IsFloat(const string& s)
 {
     char c;
     bool has_a_dot = false;
@@ -37,7 +37,7 @@ bool isfloat(const string& s)
     return has_a_dot;
 }
 
-bool isdigit(const string& s)
+bool IsDigit(const string& s)
 {
     for (size_t i = 0; i < s.size(); i++)
         if (!::isdigit(s.at(i)))

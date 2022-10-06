@@ -19,44 +19,40 @@
 namespace ezcfg
 {
 
-typedef std::pair<name_t, value_t> linepair_t;
-typedef std::vector<linepair_t> dictionary_t;
+typedef std::pair<VariableName, ConfigValue> VariableDefinition;
+typedef std::vector<VariableDefinition> ConfigDictionary;
 
-class ezconfig
+class Config
 {
-    dictionary_t dictionary;
+    ConfigDictionary dictionary;
 public:
-    ezconfig() {}
-    ~ezconfig() {}
+    Config() {}
+    ~Config() {}
 
-    void save(const string& filename);
-    void load(const string& filename);
-    void set(const name_t& name, const value_t& value);
-    const value_t find(const name_t& name);
-    inline const value_t get(const name_t& name) { return find(name); }
+    void SaveToFile(const string& filename);
+    void SaveToMemory(string& data);
+    void LoadFromFile(const string& filename);
+    void LoadFromMemory(const string& data);
+    void Set(const VariableName& name, const ConfigValue& value);
+    const ConfigValue Find(const VariableName& name);
+    inline const ConfigValue Get(const VariableName& name) { return Find(name); }
 private:
-    value_t& find_val(const name_t& name);
+    ConfigValue& FindVarRef(const VariableName& name);
 };
 
-void ezconfig::set(const name_t& name, const value_t& value)
+void Config::Set(const VariableName& name, const ConfigValue& value)
 {
-    linepair_t pair(name, value);
-    value_t& tmp = find_val(name);
-    if (tmp == nullvalue)
-        dictionary.push_back(pair);
-    else
-        tmp = value;
+    ConfigValue& val = FindVarRef(name);
+    if (val != nullvalue) 
+    {
+        val = value;
+        return;
+    }
+    VariableDefinition def(name, value);
+    dictionary.push_back(def);
 }
 
-const value_t ezconfig::find(const name_t& name)
-{
-    for (size_t i = 0; i < dictionary.size(); i++)
-        if (dictionary[i].first == name)
-            return dictionary[i].second;
-    return nullvalue;
-}
-
-value_t& ezconfig::find_val(const name_t& name)
+const ConfigValue Config::Find(const VariableName& name)
 {
     for (size_t i = 0; i < dictionary.size(); i++)
         if (dictionary[i].first == name)
@@ -64,7 +60,15 @@ value_t& ezconfig::find_val(const name_t& name)
     return nullvalue;
 }
 
-void ezconfig::save(const string& filename)
+ConfigValue& Config::FindVarRef(const VariableName& name)
+{
+    for (size_t i = 0; i < dictionary.size(); i++)
+        if (dictionary[i].first == name)
+            return dictionary[i].second;
+    return nullvalue;
+}
+
+void Config::SaveToFile(const string& filename)
 {
     std::ofstream f(filename + ".ezcfg", std::ios::binary);
     if (f.is_open())
@@ -72,14 +76,14 @@ void ezconfig::save(const string& filename)
         std::stringstream ss;
         for (size_t i = 0; i < dictionary.size(); i++)
         {
-            if (dictionary[i].second.type == value_t::intnum)
-                ss << dictionary[i].first << " = " << dictionary[i].second.data.int64 << std::endl;
+            if (dictionary[i].second.m_type == ConfigValue::INTNUM)
+                ss << dictionary[i].first << " = " << dictionary[i].second.m_data.int64 << std::endl;
             else
-            if (dictionary[i].second.type == value_t::floatnum)
-                ss << dictionary[i].first << " = " << dictionary[i].second.data.float64 << std::endl;
+            if (dictionary[i].second.m_type == ConfigValue::FLOATNUM)
+                ss << dictionary[i].first << " = " << dictionary[i].second.m_data.float64 << std::endl;
             else
-            if (dictionary[i].second.type == value_t::boolean)
-                ss << dictionary[i].first << " = " << (dictionary[i].second.data.boolean ? "true" : "false") << std::endl;
+            if (dictionary[i].second.m_type == ConfigValue::BOOLEAN)
+                ss << dictionary[i].first << " = " << (dictionary[i].second.m_data.boolean ? "true" : "false") << std::endl;
             else
                 ss << dictionary[i].first << " = " << dictionary[i].second << std::endl;
         }
@@ -88,21 +92,62 @@ void ezconfig::save(const string& filename)
     }
 }
 
-void ezconfig::load(const string& filename)
+void Config::SaveToMemory(string& data)
+{
+    if (!dictionary.empty())
+    {
+        std::stringstream ss;
+        for (size_t i = 0; i < dictionary.size(); i++)
+        {
+            if (dictionary[i].second.m_type == ConfigValue::INTNUM)
+                ss << dictionary[i].first << " = " << dictionary[i].second.m_data.int64 << std::endl;
+            else
+            if (dictionary[i].second.m_type == ConfigValue::FLOATNUM)
+                ss << dictionary[i].first << " = " << dictionary[i].second.m_data.float64 << std::endl;
+            else
+            if (dictionary[i].second.m_type == ConfigValue::BOOLEAN)
+                ss << dictionary[i].first << " = " << (dictionary[i].second.m_data.boolean ? "true" : "false") << std::endl;
+            else
+                ss << dictionary[i].first << " = " << dictionary[i].second << std::endl;
+        }
+        data = ss.str();
+        ss.clear();
+    }
+}
+
+void Config::LoadFromFile(const string& filename)
 {
     std::ifstream f(filename + ".ezcfg", std::ios::binary);
     if (f.is_open())
     {
         dictionary.clear();
         char equal[3] = {' ', '=', ' '};
-        name_t name, valuestr;
+        VariableName name, valuestr;
         while (f >> name >> equal >> valuestr)
         {
-            value_t value(valuestr.c_str());
-            linepair_t pair(name, value);
+            ConfigValue value(valuestr.c_str());
+            VariableDefinition pair(name, value);
             dictionary.push_back(pair);
         }
         f.close();
+    }
+}
+
+void Config::LoadFromMemory(const string& data)
+{
+    if (!data.empty())
+    {
+        std::stringstream ss(data.c_str());
+        dictionary.clear();
+        char equal[3] = {' ', '=', ' '};
+        VariableName name, valuestr;
+        while (ss >> name >> equal >> valuestr)
+        {
+            ConfigValue value(valuestr.c_str());
+            VariableDefinition pair(name, value);
+            dictionary.push_back(pair);
+        }
+        ss.clear();
     }
 }
 
