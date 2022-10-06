@@ -72,7 +72,16 @@ void ezconfig::save(const string& filename)
         std::stringstream ss;
         for (size_t i = 0; i < dictionary.size(); i++)
         {
-            ss << dictionary[i].first << " = " << dictionary[i].second << std::endl;
+            if (dictionary[i].second.type == value_t::intnum)
+                ss << dictionary[i].first << " = " << dictionary[i].second.data.int64 << std::endl;
+            else
+            if (dictionary[i].second.type == value_t::floatnum)
+                ss << dictionary[i].first << " = " << dictionary[i].second.data.float64 << std::endl;
+            else
+            if (dictionary[i].second.type == value_t::boolean)
+                ss << dictionary[i].first << " = " << (dictionary[i].second.data.boolean ? "true" : "false") << std::endl;
+            else
+                ss << dictionary[i].first << " = " << dictionary[i].second << std::endl;
         }
         f << ss.str();
         f.close();

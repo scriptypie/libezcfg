@@ -18,6 +18,13 @@ namespace ezcfg
 struct value_t
 {
     string _v;
+    union data_t
+    {
+        int64_t int64;
+        double  float64;
+        bool    boolean;
+    };
+    data_t data;
     enum type_t
     {
         undefined, str, intnum, floatnum, boolean, intvector, floatvector
@@ -33,17 +40,18 @@ struct value_t
     value_t(const char* s, const uint32_t& t) : _v(s), type((type_t)t) {}
     value_t(const char* s) : _v(s)
     {
-        if (isdigit(_v)) { type = intnum; return; }
-        if (isfloat(_v)) { type = floatnum; return; }
-        if (_v == "true" || _v == "false") { type = boolean; return; }
+        if (isdigit(_v)) { type = intnum; data.int64 = atoll(_v.c_str()); return; }
+        if (isfloat(_v)) { type = floatnum; data.float64 = atof(_v.c_str()); return; }
+        if (_v == "true" || _v == "false") { type = boolean; data.boolean = _v == "true" ? true : false; return; }
         type = str;
     }
-    value_t(const int& s) : _v(std::to_string(s)), type(intnum) {}
-    value_t(const double& s) : _v(std::to_string(s)), type(floatnum) {}
-    value_t(const bool& s) : _v(std::to_string(s)), type(boolean) {}
+    value_t(const int& s) : type(intnum) { data.int64 = s; }
+    value_t(const double& s) : type(floatnum) { data.float64 = s; }
+    value_t(const float& s) : type(floatnum) { data.float64 = s; }
+    value_t(const bool& s) : type(boolean) { data.boolean = s; }
     value_t(const std::vector<int>& iv) : type(intvector)
     {
-        _v += "(";
+        _v = "(";
         for (size_t i = 0; i < iv.size(); i++)
         {
             _v += std::to_string(iv[i]);
@@ -91,7 +99,6 @@ bool value_t::operator==(const value_t& b) const
     return _v == b._v;
 }
 
-
 template<>
 const char* value_t::as<const char*>() const
 {
@@ -107,7 +114,7 @@ std::string value_t::as<std::string>() const
 template<>
 int value_t::as<int>() const
 {
-    return (type == intnum) ? atoi(_v.c_str()) : 0;
+    return (type == intnum) ? data.int64 : 0;
 }
 
 template<>
@@ -191,19 +198,19 @@ std::vector<int> value_t::as_ptr<int>() const
 template<>
 float value_t::as<float>() const
 {
-    return (type == floatnum) ? atof(_v.c_str()) : 0;
+    return (type == floatnum) ? data.float64 : 0;
 }
 
 template<>
 double value_t::as<double>() const
 {
-    return (type == floatnum) ? atof(_v.c_str()) : 0;
+    return (type == floatnum) ? data.float64 : 0;
 }
 
 template<>
 bool value_t::as<bool>() const
 {
-    return (type == boolean) ? ((_v == "true") ? true : false) : 0;
+    return (type == boolean) ? data.boolean : 0;
 }
 
 }
